@@ -2,6 +2,8 @@
 from pathlib import Path
 import argparse,json,os,re,shutil,subprocess,sys,unicodedata
 BASE=Path(__file__).resolve().parent
+PYTHON_SRC=BASE/'src'/'python'
+if str(PYTHON_SRC) not in sys.path:sys.path.insert(0,str(PYTHON_SRC))
 def save(p,data):p.write_text(json.dumps(data,ensure_ascii=False,indent=2),'utf-8')
 def run(cmd):subprocess.run([str(x) for x in cmd],check=True)
 def clean(s):return re.sub(r'\s+',' ',''.join(' ' if unicodedata.category(c).startswith('P') else c for c in s)).strip()
@@ -31,7 +33,7 @@ def init(a):
     video=Path(a.video).resolve();root=Path(a.project).resolve();root.mkdir(parents=True,exist_ok=True)
     if (root/'config.json').exists():raise RuntimeError('Project exists; use its config to continue rather than overwriting it')
     if not video.is_file():raise FileNotFoundError(video)
-    c=json.loads((BASE/'config.example.json').read_text('utf-8'))
+    c=json.loads((BASE/'examples'/'basic'/'config.example.json').read_text('utf-8'))
     c.update(projectDir=str(root),sourceVideo=str(video),outputDir=str(root/'exports'),fontDir=str(root/'fonts'),filmFile='film.html',uiFile='film.html',uiEntry='main.jsx',subtitleFont='Source Han Sans SC',fingerprintFiles=['bundle.js','bundle.css','story.json','captions.json'])
     for k in ['node','ffmpeg','ffprobe','chrome']:
         if getattr(a,k,None):c[k]=getattr(a,k)
@@ -90,7 +92,7 @@ def build(a):
     for s in plan['scenes']:
         if s['kind']=='ui' and not (root/'assets'/s['image']).is_file():raise FileNotFoundError(s['image'])
     save(root/'story.json',plan)
-    template=Path(a.template).resolve() if a.template else BASE
+    template=Path(a.template).resolve() if a.template else BASE/'templates'/'studio-blue'
     manifest=json.loads((template/'template.json').read_text('utf-8'))
     if manifest.get('protocol')!='layered-film-v1' or manifest.get('sourceGeometry')!='presenter-v1':raise ValueError('Incompatible template protocol or source geometry')
     def inside(folder,name):
@@ -111,7 +113,7 @@ def build(a):
     else:css.write_text(re.sub(r'@font-face\{[^}]+\}','',css.read_text('utf-8')),'utf-8')
     (root/'film.html').write_text('<!doctype html><html lang="zh"><meta charset="utf-8"><title>Video composition</title><link rel="stylesheet" href="bundle.css"><div id="root"></div><script src="bundle.js"></script></html>','utf-8')
     save(root/'exports/.resolved-config.json',c)
-    run([c['node'],BASE/'build_project.mjs',root/'exports/.resolved-config.json'])
+    run([c['node'],BASE/'src'/'js'/'build_project.mjs',root/'exports/.resolved-config.json'])
     from runtime import write_srt
     write_srt(root/'captions.json',root/'captions.srt',0,plan['duration']);print('Built preview and SRT. Start serve.py with LVE_CONFIG='+str(root/'config.json'))
 def main():

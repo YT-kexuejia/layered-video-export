@@ -2,8 +2,11 @@
 from pathlib import Path
 from http.server import ThreadingHTTPServer,SimpleHTTPRequestHandler
 import json,subprocess,threading,sys,os,re
+BASE=Path(__file__).resolve().parent
+PYTHON_SRC=BASE/'src'/'python'
+if str(PYTHON_SRC) not in sys.path:sys.path.insert(0,str(PYTHON_SRC))
 from runtime import load_settings
-C=load_settings();BASE=Path(__file__).resolve().parent;OUT=Path(C['outputDir']);PORT=int(os.environ.get('LVE_PORT','4920'));LOCK=threading.Lock();PROCESS=None
+C=load_settings();OUT=Path(C['outputDir']);PORT=int(os.environ.get('LVE_PORT','4920'));LOCK=threading.Lock();PROCESS=None
 POINTER=OUT/'latest.txt'
 def active_job():return POINTER.read_text().strip() if POINTER.exists() else None
 def alive(pid):
@@ -34,10 +37,10 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path=='/favicon.ico':self.send_response(204);self.end_headers();return
         if self.path=='/api/export':return self.json(status())
-        if self.path=='/':self.path='/dashboard.html'
+        if self.path=='/':self.path='/web/dashboard.html'
         route=self.path.split('?')[0]
         if route=='/source.mp4':return self.source()
-        if route not in ('/dashboard.html','/example.html','/film.html','/bundle.js','/bundle.css','/story.json','/captions.json','/captions.srt') and not route.startswith(('/exports/','/assets/','/fonts/')):return self.send_error(404)
+        if route not in ('/web/dashboard.html','/film.html','/bundle.js','/bundle.css','/story.json','/captions.json','/captions.srt') and not route.startswith(('/exports/','/assets/','/fonts/')):return self.send_error(404)
         return super().do_GET()
     def source(self):
         file=Path(C['sourceVideo']);size=file.stat().st_size;start=0;end=size-1

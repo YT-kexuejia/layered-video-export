@@ -1,8 +1,11 @@
 """Web export controller: 5-minute segments, durable resume, validated cleanup."""
 from pathlib import Path
 import os,sys,json,time,subprocess,hashlib,shutil,argparse
+WORK=Path(__file__).resolve().parent
+PYTHON_SRC=WORK/'src'/'python'
+if str(PYTHON_SRC) not in sys.path:sys.path.insert(0,str(PYTHON_SRC))
 from runtime import load_settings, SETTINGS_PATH
-C=load_settings();WORK=Path(__file__).resolve().parent;ROOT=Path(C['projectDir']);EXPORTS=Path(C['outputDir'])
+C=load_settings();ROOT=Path(C['projectDir']);EXPORTS=Path(C['outputDir'])
 NODE=Path(C['node']);PY=Path(sys.executable);FF=Path(C['ffmpeg']);FP=Path(C['ffprobe']);SOURCE=Path(C['sourceVideo'])
 p=argparse.ArgumentParser();p.add_argument('--job',required=True);p.add_argument('--config',help='Reserved job metadata; settings come from LVE_CONFIG');p.add_argument('--start',type=float,default=0);p.add_argument('--duration',type=float);p.add_argument('--segment-frames',type=int,default=7200);args=p.parse_args()
 if not args.job.replace('-','').replace('_','').isalnum():raise ValueError('Invalid job')
@@ -79,8 +82,8 @@ try:
             fonts=current/'fonts';fonts.mkdir(exist_ok=True)
             for f in Path(C['fontDir']).glob('*.otf'):
                 if not (fonts/f.name).exists():shutil.copyfile(f,fonts/f.name)
-            run([NODE,WORK/'render_layers.mjs',f'--dir={current}',f'--start={args.start+first/24}',f'--frames={count}',f'--cancel={cancel}'],'rendering')
-            run([PY,WORK/'segment_assets.py',current,args.start+first/24,count],'segment-encoding')
+            run([NODE,WORK/'src'/'js'/'render_layers.mjs',f'--dir={current}',f'--start={args.start+first/24}',f'--frames={count}',f'--cancel={cancel}'],'rendering')
+            run([PY,WORK/'src'/'python'/'segment_assets.py',current,args.start+first/24,count],'segment-encoding')
             validate(current/'segment.mp4',count)
         (current/'segment.mp4').replace(target)
         info['segments'].append(dict(start=first,count=count,file=target.name,encoder='h264_nvenc'));atomic(manifest,info)

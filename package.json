@@ -17,6 +17,6 @@
     "animejs": "4.2.2"
   },
   "scripts": {
-    "check": "node --check render_layers.mjs"
+    "check": "node --check src/js/render_layers.mjs && node --check src/js/build_project.mjs"
   }
 }
