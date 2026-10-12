@@ -26,3 +26,9 @@ __pycache__/
 *-progress.txt
 .DS_Store
 Thumbs.db
+
+# Curated, anonymized documentation screenshots
+!docs/
+!docs/images/
+!docs/images/*.png
+!docs/images/*.jpg
