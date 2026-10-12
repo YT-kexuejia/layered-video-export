@@ -11,7 +11,7 @@ const story=JSON.parse(fs.readFileSync(path.join(src,'story.json'),'utf8'));
 fs.mkdirSync(path.join(root,'ui'),{recursive:true});
 const progress=(phase,done,total)=>fs.writeFileSync(path.join(root,'layer-progress.json'),JSON.stringify({phase,done,total}));
 function check(){if(fs.existsSync(cancel))throw Error('Paused');const disk=fs.statfsSync(root);if(disk.bavail*disk.bsize<1024**3)throw Error('磁盘剩余空间不足 1GB 已生成素材保留');}
-if(C.uiEntry)await req('esbuild').build({entryPoints:[path.join(src,C.uiEntry)],bundle:true,jsx:'automatic',outfile:path.join(root,'ui-bundle.js'),nodePaths:[path.resolve('node_modules')],loader:{'.otf':'file'},define:{'process.env.NODE_ENV':'"production"'},minify:true,plugins:[{name:'no-ui-webgl',setup(b){b.onLoad({filter:/(Scene3D|Objects3D|LightPillar)\.jsx$/},a=>({contents:`import React from 'react';export default function Empty(){return <div className=${JSON.stringify(a.path.includes('Objects3D')?'object3d':'scene3d')}/>}`,loader:'jsx'}))}}]});
+if(C.uiEntry)await req('esbuild').build({entryPoints:[path.join(src,C.uiEntry)],bundle:true,jsx:'automatic',outfile:path.join(root,'ui-bundle.js'),nodePaths:[path.resolve('node_modules'),...(C.nodeModules||[])],loader:{'.otf':'file','.ttf':'file'},assetNames:'ui-bundle-fonts/[name]-[hash]',define:{'process.env.NODE_ENV':'"production"'},minify:true,plugins:[{name:'no-ui-webgl',setup(b){b.onLoad({filter:/\.jsx$/},a=>(C.gpuModules||['Scene3D.jsx','Objects3D.jsx','LightPillar.jsx']).includes(path.basename(a.path))?({contents:`import React from 'react';export default function Empty(){return <div className=${JSON.stringify(a.path.includes('Objects3D')?'object3d':'scene3d')}/>}`,loader:'jsx'}):null)}}]});
 let gpuHandle;
 const server=http.createServer(async(r,res)=>{
  try{
@@ -83,7 +83,7 @@ try{
   if(['filmcut','edit-bay'].includes(s.kind))range(s.start,s.start+10.1);
  }
  const indices=[...active].sort((a,b)=>a-b);fs.writeFileSync(path.join(root,'ui-index.json'),JSON.stringify(indices));
- if(!fs.existsSync(path.join(root,'ui.ready'))){const p=await page(true);await p.addStyleTag({content:`html,body,.stage{background:transparent!important}.light,.veil,.scene-visual canvas,#speaker,.caption,.wave{visibility:hidden!important}.portrait{background:transparent!important;box-shadow:none!important}.portraitshade{visibility:hidden!important}*{animation:none!important}`});await p.evaluate(()=>window.__filmDraws?.clear());
+ if(!fs.existsSync(path.join(root,'ui.ready'))){const p=await page(true);await p.addStyleTag({content:`html,body,.stage{background:transparent!important}.light,.veil,.scene-visual canvas,#speaker,.caption,.wave{visibility:hidden!important}.portrait{background:transparent!important;box-shadow:none!important}.portraitshade{visibility:hidden!important}`});await p.evaluate(()=>window.__filmDraws?.clear());
   let prior;for(let j=0;j<indices.length;j++){check();const i=indices[j],file=path.join(root,'ui',String(i).padStart(5,'0')+'.png');
    if(!fs.existsSync(file)){await p.evaluate(t=>window.__film.seek(t,true),start+i/fps);const si=await p.evaluate(()=>window.__film.getScene().id);if(si!==prior){await p.evaluate(()=>Promise.all([...document.images].map(im=>im.decode().catch(()=>{}))));prior=si;}
     await p.screenshot({path:file+'.tmp',type:'png',omitBackground:true,optimizeForSpeed:true,captureBeyondViewport:false});fs.renameSync(file+'.tmp',file);

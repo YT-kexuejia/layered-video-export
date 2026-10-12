@@ -1,2 +1,3 @@
 Pillow==12.3.0
 manimgx==0.1.1
+faster-whisper>=1.2,<2

@@ -1,105 +1,51 @@
-# Layered Video Export
+# Talking Head Studio / Layered Video Export
 
-**面向网页解说视频的分层快速导出程序。** 将动态背景 / 3D、网页图文和人物原视频分开处理，再合成 1080p、24 fps 成片。
+**给 Agent 一个口播视频，让它完成字幕、内容图解、3D 包装、网页预览和分层加速导出。自带 Studio Blue 风格模板，也支持下载新模板接入。**
 
-它减少的是重复截图和逐帧视频定位的工作，不是降低分辨率。适合有长时间静止图文、持续动态背景和人物画中画的讲解视频。
+这是一套供现有 Agent 执行的本地后期工作流。Agent 理解口播、决定画面和校对时码；程序负责转写、构建和渲染。不需要再为本项目配置 AI API Key。需要支持读写文件、执行命令和检查页面的 Agent；仅下载仓库不会自动启动一个隐藏的 AI 服务。
 
-> 当前版本是一个有明确适配约束的参考实现，不是任意网页的一键导出器。Windows + NVIDIA GPU 为已支持目标环境。详见 [适配协议](ADAPTER.md)。
+## 用户怎么用
 
-## 工作方式
+```sh
+git clone https://github.com/YT-kexuejia/layered-video-export.git
+```
 
-| 画面部分 | 处理方式 |
+把目录和视频交给 Agent，直接说：
+
+> 阅读 SKILL.md，用自带模板给这个口播视频配解说画面和后期，先给我网页预览与 SRT，我确认后再导出。
+
+Agent 按 [SKILL.md](SKILL.md) 完成环境检查、本地转写、语义编排、模板构建、网页检查与交付。详细命令在 [WORKFLOW.md](WORKFLOW.md)。素材不离开本机；Agent 如果使用云端模型分析转写文本，其数据处理由用户所选 Agent 决定。
+
+## 自带模板
+
+Studio Blue 提供科技风排版、蓝色程序光带、侧栏人物、章节配色、金属球体、GPU/服务器/装配层/镜头轨道/天平等3D，以及对比、节点图、图表、分镜、编辑时间线和文字图解。模板保留内容层级、渐显与合理转场，按口播实际时码揭示信息。字幕用空格分句，长句按词时码切分。
+
+动效使用 **MIT Anime.js**，3D 使用 **MIT Three.js**，光带独立实现；不随仓库分发 React Bits 或 GSAP。字体可选择本机思源黑体；字体文件和用户肖像不预装。素材需使用获授权的来源。
+
+后续模板可以独立放在 GitHub 或下载包，提供 template.json 后通过 `pipeline.py build --template DIRECTORY` 接入，详见 [TEMPLATES.md](TEMPLATES.md)。当前模板接口保持固定的1080p24分层协议，改变人物合成几何需要同步适配，不能直接导入任意网页。
+
+## 预览与导出
+
+网页提供播放、拖动、倍速、章节跳转、SRT下载、开始/继续/暂停导出和成片下载。原声最终与合成画面一起导出。默认1080p、24fps，无背景音乐。
+
+| 图层 | 加速方式 |
 | --- | --- |
-| 动态背景与 Canvas / Three.js | 按时间生成，通过 WebCodecs 编码为 H.264，分批写盘 |
-| 文字、图表、网页 UI | 只在变化区间截透明 PNG，静止区间复用图片 |
-| 小型动态波形 | ManimGX 生成透明图层 |
-| 人物原视频 | FFmpeg 连续读取、裁切与叠加 |
-| 最终合成 | NVIDIA NVENC，保留原声，生成 MP4 和 SRT |
+| 背景与3D | 确定性时间驱动，通过 WebCodecs 编码连续图层 |
+| 图文 UI | 变化区间截图，静止区间复用 |
+| 波形 | ManimGX 生成小型透明图层 |
+| 人物视频 | FFmpeg 连续解码、裁切合成，不让浏览器逐帧定位 |
+| 成片 | NVIDIA NVENC 编码段落，最后拼接并加入原声 |
 
-## 存储规则
+**每五分钟合成并验证一个段落，再删除该段图片和临时图层。** 中断保留未完成素材，继续复用已有图片及完成图层；未完成的GPU流可能需要重做当前段。视频、已完成段落和 manifest 保留。修改模板/计划后用新任务，避免混合不同版本缓存。
 
-- 每段最多 **7200 帧，即 5 分钟**；最后一段处理剩余帧。
-- 合成成功后检查分辨率、帧率及帧数。
-- 先保存视频段及 manifest，再删除该段图片和临时图层。
-- 暂停保留当前段图片、已完成图层和已合成视频段。
-- 继续时复用已有 PNG 和完成图层。当前段未完成的 GPU 流需要重新生成。
-- 磁盘剩余不足 1GB 时停止，已有素材保留。
-- 最后拼接视频流并加入原声，视频不再次编码。
+速度取决于硬件、动态图文密度、源视频和磁盘，不承诺固定倍数。网页展示整体实测帧/秒，不以某个GPU阶段速度冒充完整导出速度。
 
-## 环境
+## 环境与边界
 
-- Windows，NVIDIA GPU 和可用的 NVENC 驱动。
-- Python 3.13+，Node.js 22+，Google Chrome。
-- FFmpeg / ffprobe。FFmpeg 需要包含 `h264_nvenc`、libass 字幕滤镜和 qtrle。
-- 本机字体：自行配置 `fontDir` 和 `subtitleFont`，仓库不打包字体。
+已支持目标：Windows、NVIDIA NVENC、Chrome AVC WebCodecs、Python3.13+、Node22+、FFmpeg与ffprobe。首次安装 npm/Python依赖和语音模型需要联网。CPU转写可用；高质量GPU转写需CUDA/cuDNN。当前导出引擎没有完成跨平台及非NVIDIA回退验证。
 
-## 快速开始
+这是自动化生产工具，不保证无人校对便可发布：产品名转写、口播与画面对齐、人物裁切、素材授权仍由 Agent 检查。README不把模板示意图当作产品真实截图，也不把预设文案当作事实。
 
-在仓库目录运行 PowerShell：
+## 许可
 
-```powershell
-py -3.13 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-npm install
-Copy-Item config.example.json config.json
-```
-
-将 FFmpeg / ffprobe / Node 加入 PATH，或在 `config.json` 中填写工具路径。Chrome 可自动检测，也可以指定 `chrome`。
-
-```powershell
-.\.venv\Scripts\python.exe doctor.py
-.\.venv\Scripts\python.exe generate_example.py
-.\.venv\Scripts\python.exe export_video.py --job=demo
-```
-
-`generate_example.py` **在本机生成** 12 秒测试图案和提示音，不包含真实人物、原视频或任何已测试数据，也不会覆盖已有输入。最小示例用于验证导出链路，不用于展示完整视觉设计能力。
-
-再次运行相同命令可继续未完成任务。使用新 `--job` 建立新任务。
-
-## 网页按钮
-
-```powershell
-.\.venv\Scripts\python.exe serve.py
-```
-
-打开 `http://127.0.0.1:4920/`，点击 Export / Continue export；暂停按钮保留素材。服务只绑定本机回环地址。服务进程需保持运行；若希望关闭终端后继续，可用虚拟环境的 `pythonw.exe serve.py` 在后台启动。不要将该接口暴露到公网。
-
-## 接入自己的作品
-
-配置项目目录、原视频、字体和输出目录，再按 [ADAPTER.md](ADAPTER.md) 提供时间定位 API 和 DOM 图层。当前人物布局及片头缩放使用参考几何，其他布局需要改适配器。
-
-```powershell
-$env:LVE_CONFIG = 'D:\my-project\config.json'
-.\.venv\Scripts\python.exe doctor.py
-.\.venv\Scripts\python.exe export_video.py --job=my-video
-```
-
-## 查看进度与结果
-
-输出目录默认是 `local/exports/`：
-
-```text
-<job>.json                 当前阶段、总进度、整体平均 fps
-<job>.frames/work-*/ui/    尚未合成的透明图文 PNG
-<job>.frames/segments/    已验证的视频段
-<job>.mp4                  最终成片
-<job>.srt                  字幕
-```
-
-整体平均 fps 在完成视频段后按真实耗时计算；背景层 fps、波形 fps 和成片整体速度不能混为一谈。实际速度取决于显卡、内存、画面复杂度和磁盘，不承诺固定倍数。
-
-## 项目范围
-
-包含程序源码、配置示例、最小示例页面、本地仪表盘、AI 使用说明和 MIT 许可证。
-
-**不包含**：人物照片、原视频、音频、个人字幕或文稿、截图、测试结果、性能日志、缓存、已导出文件、账号信息、本机配置、依赖二进制或原项目历史。
-
-提供给其他 AI 时，让它先阅读 [AI_GUIDE.md](AI_GUIDE.md)，再调用程序。单靠提示词不能替代实际渲染代码。
-
-## 致谢
-
-基于 Chrome WebCodecs、FFmpeg、Puppeteer、esbuild 和 [ManimGX](https://github.com/academa-labs/manimgx)；Canvas / [Three.js](https://threejs.org/) 可作为背景和 3D 图层。受到网页视频框架按时间渲染的工作方式启发。第三方依赖各自适用其许可证，本仓库不打包其源码或二进制。
-
-## License
-
-自有源码采用 [MIT License](LICENSE)。输入视频、字体和项目素材的使用权由使用者负责。
+本项目自有代码与自带模板采用 MIT；依赖分别遵守上游许可。ManimGX原生wheel含GPL组件，FFmpeg许可依构建而异，本仓库不打包这些二进制。详情见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) 与 [LICENSE-AUDIT.md](LICENSE-AUDIT.md)。请勿提交用户视频、转写、输出、缓存、私密配置或密钥。

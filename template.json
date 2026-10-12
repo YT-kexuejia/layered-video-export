@@ -1,0 +1,29 @@
+{
+  "id": "studio-blue",
+  "name": "Studio Blue · 科技口播",
+  "version": "1.0.0",
+  "license": "MIT",
+  "protocol": "layered-film-v1",
+  "description": "自带模板：蓝色光带 金属球体 多种空间模型 分章节配色 非重复图解 人物侧栏",
+  "width": 1920,
+  "height": 1080,
+  "fps": 24,
+  "files": {
+    "template-main.jsx": "main.jsx",
+    "template-timeline.js": "timeline.js",
+    "template-LightPillar.jsx": "LightPillar.jsx",
+    "template-Visuals.jsx": "Visuals.jsx",
+    "template-DirectedVisuals.jsx": "DirectedVisuals.jsx",
+    "template-Objects3D.jsx": "Objects3D.jsx",
+    "template-Scene3D.jsx": "Scene3D.jsx",
+    "template-motion.js": "motion.js",
+    "template-base.css": "base.css",
+    "template-footer-fixed.css": "footer-fixed.css",
+    "template-full.css": "full.css",
+    "template-directed.css": "directed.css"
+  },
+  "assets": [],
+  "gpuModules": ["Scene3D.jsx", "Objects3D.jsx", "LightPillar.jsx"],
+  "previewEntrypoint": "main.jsx",
+  "sourceGeometry": "presenter-v1"
+}

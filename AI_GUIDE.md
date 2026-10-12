@@ -13,4 +13,4 @@ This is a program, not a prompt-only renderer. Any assistant with filesystem and
 9. Pause through the local endpoint or the job's `.cancel` marker. Resume the same job only with an unchanged fingerprint.
 10. A stopped partial GPU layer is regenerated for its current segment. Existing PNGs and completed layers are reused. Do not describe this as arbitrary per-frame GPU resume.
 
-The reference implementation is Windows + NVIDIA, 1920x1080, 24 fps, fixed presenter geometry. Do not promise other platforms, resolutions, BGM, automatic editing, transcription or universal CSS compatibility. Those need additional implementation and tests.
+For the complete talking-head workflow, start with SKILL.md and WORKFLOW.md. Local transcription, agent-authored scene planning, the bundled Studio Blue template, browser preview and SRT are now included. The reference export adapter remains Windows + NVIDIA, 1920x1080, 24 fps, fixed presenter geometry. Do not promise automatic speech cuts, BGM, universal CSS compatibility or untested platforms.
