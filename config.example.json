@@ -1,0 +1,15 @@
+{
+  "projectDir": ".",
+  "filmFile": "example.html",
+  "uiFile": "example.html",
+  "uiEntry": null,
+  "fingerprintFiles": ["example.html", "story.json", "captions.json"],
+  "sourceVideo": "local/input.mp4",
+  "outputDir": "local/exports",
+  "fontDir": "local/fonts",
+  "subtitleFont": "Arial",
+  "chrome": null,
+  "node": "node",
+  "ffmpeg": "ffmpeg",
+  "ffprobe": "ffprobe"
+}

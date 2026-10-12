@@ -1,0 +1,11 @@
+{
+  "name": "layered-video-export",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A segmented hybrid video exporter for deterministic web compositions",
+  "type": "module",
+  "license": "MIT",
+  "engines": {"node": ">=22"},
+  "dependencies": {"esbuild": "0.25.12", "puppeteer-core": "25.13.0", "three": "0.186.1"},
+  "scripts": {"check": "node --check render_layers.mjs"}
+}
