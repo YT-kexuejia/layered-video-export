@@ -1,8 +1,0 @@
-{
-  "duration": 12,
-  "chapters": [{"start": 0, "theme": "blue", "accent": "#b7dbff"}],
-  "scenes": [
-    {"id":"example-intro","start":0,"end":8,"kind":"cards","chapter":0,"items":[["Separate layers","Reuse static content"]],"reveal":[0.2]},
-    {"id":"example-detail","start":8,"end":12,"kind":"cards","chapter":0,"items":[["Verified segments","Clean only completed work"]],"reveal":[8.2]}
-  ]
-}
